@@ -168,4 +168,23 @@ char** list2Matrix(List this){
     }
 }
 
+void clean(List this){
+
+    Cell current = this->start;
+    Cell previous = this->start;
+    while(current != NULL){
+        void* item = current->item;
+
+        previous = current;
+        current = current->next;
+        free(previous);
+        if(this->isDynamic){
+            free(item);
+        }
+    }
+    free(this);
+    this = listNew(DYNAMIC);
+}
+
+
 

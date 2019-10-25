@@ -13,7 +13,7 @@
 
 typedef struct list_* List;
 
-List listNew();
+List listNew(unsigned int isDynamic);
 
 void* listGet(List this, unsigned int index);
 
@@ -30,5 +30,7 @@ void listRestart(List this);
 void* listNext(List this);
 
 char** list2Matrix(List this);
+
+void clean(List this);
 
 #endif //_GHOSTSHELL_LIST_H
