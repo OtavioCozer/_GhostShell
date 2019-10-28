@@ -22,13 +22,13 @@ char* utilsGetLine();
 //pega uma string e retorna uma lista de strings quebrando a string nos pontos onde exista um #
 void clearInput(char* linha, List this);
 
-//dado uma string retorna 1 se for igual a myWait, e retorna 2 se for igual a clean&die 
+//dado uma string retorna 1 se for igual a myWait, e retorna 2 se for igual a clean&die
 int isGhostCommand(char* command);
 
 //funcao chamada por um processo filho da shell para gerar um processo filho ghost
 void generateGhostSon();
 
-//dado uma string e um vetor de strings previamente alocados retorna um vetor de strings com os elementos da string comando original quebrandos aonde haviam espacos 
+//dado uma string e um vetor de strings previamente alocados retorna um vetor de strings com os elementos da string comando original quebrandos aonde haviam espacos
 char** createMatrix(char* command, char** matrix);
 
 //implementacao do comando myait

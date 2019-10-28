@@ -1,7 +1,6 @@
 all: main.o List.o utils.o
 	gcc -o main main.o utils.o List.o
 	rm -rf *.o 
-	./main
 
 main.o: main.c commons/utils.h commons/List.h
 	gcc -c main.c 

@@ -38,8 +38,7 @@ char* utilsGetLine(){
         }
     }
 	if(ignoreRead){
-		ignoreRead = 0;
-		return gambiarraLine;
+        return NULL;
 	}else{
     		return str;
 	}
@@ -121,6 +120,10 @@ int cleanAndDie(){
 }
 
 void sigIntHandler(int sig){
+    sigset_t mask;
+    sigfillset(&mask);
+    sigprocmask(SIG_SETMASK, &mask, NULL);
+
     int childRunning = 0;
         pid_t* pidPointer;
         int i;
@@ -151,12 +154,14 @@ void sigIntHandler(int sig){
                 exit(0);
             }else{
                 printf("gsh>");
-		ignoreRead = 1;
-		gambiarraLine = utilsGetLine();
+                fflush(stdout);
+		        ignoreRead = 1;
             }
         }else{
             exit(0);
         }
+    sigemptyset(&mask);
+    sigprocmask(SIG_SETMASK, &mask, NULL);
 }
 
 void sigChildHandler(int sig) {
@@ -167,7 +172,6 @@ void sigChildHandler(int sig) {
     listRestart(pidList);
     int initialSize = listGetLength(pidList);
     for(i=0; i < initialSize; i++){
-        printf("blau\n");
         pidPointer = (pid_t*)listNext(pidList);
         if(pidPointer == NULL){
             continue;
@@ -185,7 +189,6 @@ void sigChildHandler(int sig) {
                 pid_t pgid;
                 pidPointer = listRemoveByPid(pidList, return_pid);
                 pgid = getpgid(*pidPointer);
-                printf("PGID: %d\n", pgid);
                 if(pidPointer != NULL){
                     pgidPointer = listRemoveByPid(pgidList, pgid);
                     if(pgidPointer !=  NULL){
@@ -204,8 +207,6 @@ void sigChildHandler(int sig) {
 }
 
 void sigStopHandler(int sig) {
-
-
     int i, initialSize;
     pid_t* pgidPointer;
     initialSize = listGetLength(pgidList);

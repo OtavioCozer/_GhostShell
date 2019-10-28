@@ -9,7 +9,7 @@
 #include "commons/utils.h"
 
 
-
+//
 List pidList;
 List pgidList;
 List comandos;
@@ -24,7 +24,7 @@ int main() {
     oldSigStopHandler = signal(SIGTSTP, sigStopHandler);
 
     int initialCommandSize = 0;
-    char* line;
+    char *line;
     pid_t pgid = 0;
     pid_t pid = 0;
     pidList = listNew(DYNAMIC);
@@ -32,12 +32,11 @@ int main() {
     comandos = listNew(DYNAMIC);
 
 
-    while(1){
+    while (1) {
         printf("gsh>");
         line = utilsGetLine();
-        if(ignoreRead){
+        if (ignoreRead) {
             ignoreRead = 0;
-            free(line);
             continue;
         }
         clearInput(line, comandos);
@@ -46,50 +45,50 @@ int main() {
         int i;
         listRestart(comandos);
         initialCommandSize = listGetLength(comandos);
-        for(i = 0; i < initialCommandSize; i++){
-            char* comando = listRemove(comandos, 0);
+        for (i = 0; i < initialCommandSize; i++) {
+            char *comando = listRemove(comandos, 0);
             int selectedCommand = isGhostCommand(comando);
-            if(selectedCommand == 1){
+            if (selectedCommand == 1) {
                 //myWait
                 myWait();
-		initialCommandSize--;
-            } else if(selectedCommand == 2){
+                initialCommandSize--;
+            } else if (selectedCommand == 2) {
                 //cleanANDdie
                 cleanAndDie();
-		initialCommandSize--;
-            } else{
+                initialCommandSize--;
+            } else {
                 //normalCommand
                 pid = fork();
-                if(i == 0){
+                if (i == 0) {
                     pgid = pid;
                 }
-                if(pid == -1){
+                if (pid == -1) {
                     perror("NAO CONSEGUI FAZER UM FILHO");
-                } else if(pid == 0){ // son
+                } else if (pid == 0) { // son
                     generateGhostSon();
                     signal(SIGINT, SIG_IGN);
                     signal(SIGTSTP, oldSigStopHandler);
                     signal(SIGCHLD, oldSigChildHandler);
-                    if(initialCommandSize != 1){
+                    if (initialCommandSize != 1) {
                         setpgid(getpid(), pgid);
                     }
-                    char* matrix[strlen(comando)];
+                    char *matrix[strlen(comando)];
                     createMatrix(comando, matrix);
                     execvp(matrix[0], matrix);
                     perror("NAO CONSEGUI EXECUTAR ESSE COMANDO");
                     exit(0);
                     printf("DEI EXIT");
-                }else{ // father
-                    pid_t* pidPointer = (pid_t*) malloc(sizeof(pid_t));
+                } else { // father
+                    pid_t *pidPointer = (pid_t *) malloc(sizeof(pid_t));
                     *pidPointer = pid;
                     listAdd(pidList, pidPointer);
 
-                    if(initialCommandSize != 1){
-                        pid_t* pgidPointer = (pid_t*) malloc(sizeof(pid_t));
+                    if (initialCommandSize != 1 && i == 0) {
+                        pid_t *pgidPointer = (pid_t *) malloc(sizeof(pid_t));
                         *pgidPointer = pgid;
                         listAdd(pgidList, pgidPointer);
                     }
-                    if(initialCommandSize == 1){
+                    if (initialCommandSize == 1) {
                         waitpid(pid, NULL, 0);
                     }
                 }
