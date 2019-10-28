@@ -17,12 +17,11 @@ int ignoreRead;
 
 int main() {
     ignoreRead = 0;
-    int (*oldSigChildHandler)();
-    int (*oldSigStopHandler)();
+    void (*oldSigChildHandler)(int);
+    void (*oldSigStopHandler)(int);
     signal(SIGINT, sigIntHandler);
     oldSigChildHandler = signal(SIGCHLD, sigChildHandler);
-    oldSigStopHandler = signal(20, sigStopHandler);
-    printf("%d\n", getpid());
+    oldSigStopHandler = signal(SIGTSTP, sigStopHandler);
 
     int initialCommandSize = 0;
     char* line;
@@ -41,8 +40,6 @@ int main() {
             free(line);
             continue;
         }
-        fflush(NULL);
-        printf("%s\n" ,line);
         clearInput(line, comandos);
         free(line);
 
@@ -55,10 +52,11 @@ int main() {
             if(selectedCommand == 1){
                 //myWait
                 myWait();
-
+		initialCommandSize--;
             } else if(selectedCommand == 2){
                 //cleanANDdie
                 cleanAndDie();
+		initialCommandSize--;
             } else{
                 //normalCommand
                 pid = fork();
@@ -69,15 +67,14 @@ int main() {
                     perror("NAO CONSEGUI FAZER UM FILHO");
                 } else if(pid == 0){ // son
                     generateGhostSon();
-                    signal(2, SIG_IGN);
-                    signal(20, oldSigStopHandler);
-                    signal(17, oldSigChildHandler);
+                    signal(SIGINT, SIG_IGN);
+                    signal(SIGTSTP, oldSigStopHandler);
+                    signal(SIGCHLD, oldSigChildHandler);
                     if(initialCommandSize != 1){
                         setpgid(getpid(), pgid);
                     }
                     char* matrix[strlen(comando)];
                     createMatrix(comando, matrix);
-                    printf("comando: %s\n", comando);
                     execvp(matrix[0], matrix);
                     perror("NAO CONSEGUI EXECUTAR ESSE COMANDO");
                     exit(0);
@@ -93,7 +90,7 @@ int main() {
                         listAdd(pgidList, pgidPointer);
                     }
                     if(initialCommandSize == 1){
-                        waitpid(pid, NULL, NULL);
+                        waitpid(pid, NULL, 0);
                     }
                 }
 

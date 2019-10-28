@@ -6,7 +6,8 @@
 extern List pidList;
 extern List pgidList;
 extern List comandos;
-extern ignoreRead;
+extern int ignoreRead;
+char* gambiarraLine;
 
 struct string{
     char* array;
@@ -22,7 +23,9 @@ char* utilsGetLine(){
     int sizeAux = 0;
     int sizeStr = 0;
     int totalSize = 0;
-    while (!ignoreRead && fgets(aux, 50, stdin) != EOF){
+
+
+    while (!ignoreRead && fgets(aux, 50, stdin) != NULL){
         sizeAux = strlen(aux);
         sizeStr = strlen(str);
         totalSize = sizeAux + sizeStr + 1;
@@ -34,7 +37,13 @@ char* utilsGetLine(){
             break;
         }
     }
-    return str;
+	if(ignoreRead){
+		ignoreRead = 0;
+		return gambiarraLine;
+	}else{
+    		return str;
+	}
+
 }
 
 void clearInput(char *linha, List this){
@@ -124,7 +133,7 @@ void sigIntHandler(int sig){
             if (return_pid == -1) {
                 /* error */
                 childRunning = 0;
-                perror("ERROR IN SIGINT HANDLER\n");
+
             } else if (return_pid == 0) {
                 /* child is still running */
                 childRunning = 1;
@@ -137,12 +146,13 @@ void sigIntHandler(int sig){
             char option;
             printf("EXISTEM PROCESSOS ATIVOS. DESEJA FINALIZAR A SHELL? S/N\n");
             scanf("%c", &option);
-            fflush(NULL);
+		clearBuffer();
             if(option == 's' || option == 'S'){
                 exit(0);
             }else{
                 printf("gsh>");
-                ignoreRead = 1;
+		ignoreRead = 1;
+		gambiarraLine = utilsGetLine();
             }
         }else{
             exit(0);
@@ -174,7 +184,7 @@ void sigChildHandler(int sig) {
                 pid_t* pgidPointer = NULL;
                 pid_t pgid;
                 pidPointer = listRemoveByPid(pidList, return_pid);
-                pgid = __getpgid(*pidPointer);
+                pgid = getpgid(*pidPointer);
                 printf("PGID: %d\n", pgid);
                 if(pidPointer != NULL){
                     pgidPointer = listRemoveByPid(pgidList, pgid);
@@ -195,13 +205,49 @@ void sigChildHandler(int sig) {
 
 void sigStopHandler(int sig) {
 
+
     int i, initialSize;
     pid_t* pgidPointer;
     initialSize = listGetLength(pgidList);
-    listRestart(pidList);
-    for (i;  i  < initialSize; i++) {
-        pgidPointer = listNext(pgidPointer);
+    listRestart(pgidList);
+    for (i=0;  i  < initialSize; i++) {
+        pgidPointer = listNext(pgidList);
+
         kill(-(*pgidPointer), SIGTSTP);
     }
 }
+
+void clearBuffer(){
+	int c;
+	while ((c = getchar()) != '\n' && c != EOF) { }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

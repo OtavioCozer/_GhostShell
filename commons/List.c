@@ -93,7 +93,6 @@ void* listRemove(List this, unsigned int index){
             current = current->next;
         }
         if (current == NULL) {
-            perror("LIST REMOVE ERROR: INDEX OUT OF LIST BOUNDS\n");
             return NULL;
         }
         if (this->start == this->end) {
@@ -125,7 +124,6 @@ void* listRemove(List this, unsigned int index){
         this->length--;
         return item;
     }else{
-        perror("LIST REMOVE ERROR: EMPTY LIST");
         return NULL;
     }
 }
@@ -155,27 +153,10 @@ void* listNext(List this){
             this->current = this->current->next;
             return this->current->item;
         }
-    }else{
-        perror("LIST NEXT: NULL POINTER\n");
         return NULL;
     }
 }
 
-char** list2Matrix(List this){
-    if(this->start!=NULL && this->end!=NULL){
-        char* matrix[this->length+1];
-        listRestart(this);
-        int i;
-        for(i = 0; i < this->length; i++){
-            matrix[i] = listNext(this);
-        }
-        matrix[this->length] = NULL;
-        return matrix;
-    } else{
-        perror("LIST TO MATRIX: NULL POINTER\n");
-        return NULL;
-    }
-}
 
 void clean(List this){
     Cell current = this->start;
@@ -210,7 +191,6 @@ void* listRemoveByPid(List this, pid_t pid){
         }
 
         if (current == NULL) {
-            perror("LIST REMOVE ERROR: INDEX OUT OF LIST BOUNDS\n");
             return NULL;
         }
         if(current == this->current){
@@ -246,7 +226,6 @@ void* listRemoveByPid(List this, pid_t pid){
         this->length--;
         return item;
     }else{
-        perror("LIST REMOVE ERROR: EMPTY LIST");
         return NULL;
     }
 
