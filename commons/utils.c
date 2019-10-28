@@ -6,6 +6,7 @@
 extern List pidList;
 extern List pgidList;
 extern List comandos;
+extern ignoreRead;
 
 struct string{
     char* array;
@@ -21,7 +22,7 @@ char* utilsGetLine(){
     int sizeAux = 0;
     int sizeStr = 0;
     int totalSize = 0;
-    while (fgets(aux, 50, stdin) != EOF){
+    while (!ignoreRead && fgets(aux, 50, stdin) != EOF){
         sizeAux = strlen(aux);
         sizeStr = strlen(str);
         totalSize = sizeAux + sizeStr + 1;
@@ -119,10 +120,10 @@ void sigIntHandler(int sig){
         for(i=0; i < initialSize; i++){
             pidPointer = (pid_t*)listNext(pidList);
             int status;
-            printf("oid\n");
-            pid_t return_pid = waitpid(*pidPointer, &status, WNOHANG); /* WNOHANG def'd in wait.h */
+            pid_t return_pid = waitpid(-1, &status, WNOHANG); /* WNOHANG def'd in wait.h */
             if (return_pid == -1) {
                 /* error */
+                childRunning = 0;
                 perror("ERROR IN SIGINT HANDLER\n");
             } else if (return_pid == 0) {
                 /* child is still running */
@@ -133,16 +134,74 @@ void sigIntHandler(int sig){
         }
 
         if(childRunning){
-            char option[10];
+            char option;
             printf("EXISTEM PROCESSOS ATIVOS. DESEJA FINALIZAR A SHELL? S/N\n");
-            scanf("%s", option);
-            if(strcmp(option, "S") == 0 || strcmp(option, "s") == 0 ){
+            scanf("%c", &option);
+            fflush(NULL);
+            if(option == 's' || option == 'S'){
                 exit(0);
-
+            }else{
+                printf("gsh>");
+                ignoreRead = 1;
             }
         }else{
             exit(0);
         }
+}
 
+void sigChildHandler(int sig) {
+    int childRunning = 0;
+    int status;
+    pid_t* pidPointer;
+    int i;
+    listRestart(pidList);
+    int initialSize = listGetLength(pidList);
+    for(i=0; i < initialSize; i++){
+        printf("blau\n");
+        pidPointer = (pid_t*)listNext(pidList);
+        if(pidPointer == NULL){
+            continue;
+        }
+        pid_t return_pid = waitpid(*pidPointer, &status, WNOHANG); /* WNOHANG def'd in wait.h */
+        if (return_pid == -1) {
+            /* error */
+        } else if (return_pid == 0) {
+            /* child is still running */
+            childRunning = 1;
+        } else if (return_pid == *pidPointer) {
+            if(!WIFEXITED(status)){
+                pid_t* pidPointer = NULL;
+                pid_t* pgidPointer = NULL;
+                pid_t pgid;
+                pidPointer = listRemoveByPid(pidList, return_pid);
+                pgid = __getpgid(*pidPointer);
+                printf("PGID: %d\n", pgid);
+                if(pidPointer != NULL){
+                    pgidPointer = listRemoveByPid(pgidList, pgid);
+                    if(pgidPointer !=  NULL){
+                        kill(-pgid, SIGKILL);
+                        free(pgidPointer);
+                    }
+                    free(pidPointer);
+                }
+            }else{
+                free(listRemoveByPid(pidList, return_pid));
+            }
+            /* child is finished. exit status in   status */
+
+        }
+    }
+}
+
+void sigStopHandler(int sig) {
+
+    int i, initialSize;
+    pid_t* pgidPointer;
+    initialSize = listGetLength(pgidList);
+    listRestart(pidList);
+    for (i;  i  < initialSize; i++) {
+        pgidPointer = listNext(pgidPointer);
+        kill(-(*pgidPointer), SIGTSTP);
+    }
 }
 

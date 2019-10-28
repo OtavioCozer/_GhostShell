@@ -33,4 +33,6 @@ char** list2Matrix(List this);
 
 void clean(List this);
 
+void* listRemoveByPid(List this, pid_t pid);
+
 #endif //_GHOSTSHELL_LIST_H

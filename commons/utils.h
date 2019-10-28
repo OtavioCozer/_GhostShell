@@ -31,4 +31,8 @@ int cleanAndDie();
 
 void sigIntHandler(int sig);
 
+void sigChildHandler(int sig);
+
+void sigStopHandler(int sig);
+
 #endif //_GHOSTSHELL_UTILS_H

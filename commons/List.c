@@ -18,12 +18,14 @@ typedef struct list_{
     unsigned int isDynamic;
     unsigned int length;
     unsigned int begin;
+    unsigned int currentRemoved;
 }list;
 
 List listNew(unsigned int isDynamic){
     List aux = (List)malloc(sizeof(list));
     aux->length = 0;
     aux->begin = 0;
+    aux->currentRemoved = 0;
     aux->start = NULL;
     aux->end = NULL;
     aux->current = NULL;
@@ -138,11 +140,18 @@ void listRestart(List this){
 
 void* listNext(List this){
     if(this != NULL) {
+        if(this->currentRemoved){
+            this->currentRemoved = 0;
+            return this->current;
+        }
         if (this->begin == 1) {
             this->current = this->start;
             this->begin = 0;
             return this->current->item;
         } else {
+            if(this->current == NULL){
+                return NULL;
+            }
             this->current = this->current->next;
             return this->current->item;
         }
@@ -169,7 +178,6 @@ char** list2Matrix(List this){
 }
 
 void clean(List this){
-
     Cell current = this->start;
     Cell previous = this->start;
     while(current != NULL){
@@ -184,6 +192,64 @@ void clean(List this){
     }
     free(this);
     this = listNew(DYNAMIC);
+}
+
+void* listRemoveByPid(List this, pid_t pid){
+    if(this->start != NULL && this->end != NULL ) {
+        int i;
+        Cell current = this->start;
+        Cell previous = this->start;
+        pid_t* pidPointer;
+        for (i = 0; current != NULL; i++) {
+            pidPointer = (pid_t*)current->item;
+            if(pid == *pidPointer){
+                break;
+            }
+            previous = current;
+            current = current->next;
+        }
+
+        if (current == NULL) {
+            perror("LIST REMOVE ERROR: INDEX OUT OF LIST BOUNDS\n");
+            return NULL;
+        }
+        if(current == this->current){
+            this->current = this->current->next;
+            this->currentRemoved = 1;
+        }
+        if (this->start == this->end) {
+            void *item = current->item;
+            free(current);
+            this->start = NULL;
+            this->end = NULL;
+            this->length--;
+            return item;
+        }
+        if(this->start == current){
+            this->start = current->next;
+            void* item = current->item;
+            free(current);
+            this->length--;
+            return item;
+        }
+        if(this->end == current){
+            this->end = previous;
+            previous->next = NULL;
+            void* item = current->item;
+            free(current);
+            this->length--;
+            return item;
+        }
+        previous->next = current->next;
+        void* item = current->item;
+        free(current);
+        this->length--;
+        return item;
+    }else{
+        perror("LIST REMOVE ERROR: EMPTY LIST");
+        return NULL;
+    }
+
 }
 
 

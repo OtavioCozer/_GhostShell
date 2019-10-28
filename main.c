@@ -13,9 +13,15 @@
 List pidList;
 List pgidList;
 List comandos;
+int ignoreRead;
 
 int main() {
+    ignoreRead = 0;
+    int (*oldSigChildHandler)();
+    int (*oldSigStopHandler)();
     signal(SIGINT, sigIntHandler);
+    oldSigChildHandler = signal(SIGCHLD, sigChildHandler);
+    oldSigStopHandler = signal(20, sigStopHandler);
     printf("%d\n", getpid());
 
     int initialCommandSize = 0;
@@ -30,6 +36,13 @@ int main() {
     while(1){
         printf("gsh>");
         line = utilsGetLine();
+        if(ignoreRead){
+            ignoreRead = 0;
+            free(line);
+            continue;
+        }
+        fflush(NULL);
+        printf("%s\n" ,line);
         clearInput(line, comandos);
         free(line);
 
@@ -49,13 +62,22 @@ int main() {
             } else{
                 //normalCommand
                 pid = fork();
-
+                if(i == 0){
+                    pgid = pid;
+                }
                 if(pid == -1){
                     perror("NAO CONSEGUI FAZER UM FILHO");
                 } else if(pid == 0){ // son
                     generateGhostSon();
+                    signal(2, SIG_IGN);
+                    signal(20, oldSigStopHandler);
+                    signal(17, oldSigChildHandler);
+                    if(initialCommandSize != 1){
+                        setpgid(getpid(), pgid);
+                    }
                     char* matrix[strlen(comando)];
                     createMatrix(comando, matrix);
+                    printf("comando: %s\n", comando);
                     execvp(matrix[0], matrix);
                     perror("NAO CONSEGUI EXECUTAR ESSE COMANDO");
                     exit(0);
@@ -65,8 +87,7 @@ int main() {
                     *pidPointer = pid;
                     listAdd(pidList, pidPointer);
 
-                    if(i == 0 && initialCommandSize != 1){
-                        pgid = pid;
+                    if(initialCommandSize != 1){
                         pid_t* pgidPointer = (pid_t*) malloc(sizeof(pid_t));
                         *pgidPointer = pgid;
                         listAdd(pgidList, pgidPointer);
@@ -74,10 +95,6 @@ int main() {
                     if(initialCommandSize == 1){
                         waitpid(pid, NULL, NULL);
                     }
-                    if(initialCommandSize != 1){
-                        setpgid(pid, pgid);
-                    }
-
                 }
 
             }
