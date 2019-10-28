@@ -9,7 +9,7 @@
 #include "commons/utils.h"
 
 
-//
+//estrutura de dados globais para serem utilizadas nos handlers
 List pidList;
 List pgidList;
 List comandos;
@@ -31,7 +31,7 @@ int main() {
     pgidList = listNew(DYNAMIC);
     comandos = listNew(DYNAMIC);
 
-
+    //loop responsavel por manter a shell executando
     while (1) {
         printf("gsh>");
         line = utilsGetLine();
@@ -45,6 +45,7 @@ int main() {
         int i;
         listRestart(comandos);
         initialCommandSize = listGetLength(comandos);
+        //loop que trata os comandos separados por #
         for (i = 0; i < initialCommandSize; i++) {
             char *comando = listRemove(comandos, 0);
             int selectedCommand = isGhostCommand(comando);
@@ -79,10 +80,12 @@ int main() {
                     exit(0);
                     printf("DEI EXIT");
                 } else { // father
+                    //inseri o pid do filho na lista de filhos
                     pid_t *pidPointer = (pid_t *) malloc(sizeof(pid_t));
                     *pidPointer = pid;
                     listAdd(pidList, pidPointer);
 
+                    //inserir o pgid do grupo na lista de grupos
                     if (initialCommandSize != 1 && i == 0) {
                         pid_t *pgidPointer = (pid_t *) malloc(sizeof(pid_t));
                         *pgidPointer = pgid;
